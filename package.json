@@ -1,0 +1,42 @@
+{
+  "name": "binh-cache-data",
+  "description": "Caching data in many levels",
+  "version": "1.0.0",
+  "author": "Nguyen Duc Binh <binh.ng1195@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/penciless/binh-cache-data.git"
+  },
+  "homepage": "https://github.com/penciless/binh-cache-data#readme",
+  "bugs": {
+    "url": "https://github.com/penciless/binh-cache-data/issues"
+  },
+  "keywords": [
+    "cache",
+    "caching",
+    "javascript",
+    "nodejs",
+    "memory",
+    "disk",
+    "storage",
+    "webservice"
+  ],
+  "dependencies": {
+    "binh-promise-queue": "^1.0.7"
+  },
+  "devDependencies": {
+    "chai": "^4.3.7",
+    "mocha": "^10.2.0",
+    "nyc": "^15.1.0"
+  },
+  "engines": {
+    "node": ">= 0.10.0"
+  },
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha test/**/*.js --bail",
+    "test-progress": "mocha test/**/*.js --reporter progress",
+    "coverage": "nyc --reporter=lcov npm run test"
+  }
+}
