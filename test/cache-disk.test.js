@@ -147,38 +147,28 @@ describe.only('CacheDisk - Initialization', function() {
         });
     });
 
-    it('should loop through all files in the directory', function(done) {
-        // cache.forget(5);
+    it('should forget long-lived inactive files', function(done) {
+        cache.forget(5);
 
-        var amount = 10;
+        var amount = 10, size = 0;
 
         for (var i = 0; i < amount; i++) {
             cache.save('id'+i, { user: i }).catch(done);
         }
 
-        // var count = 0;
-        // var ids = ['id1', 'id2', 'id3'];
-
-        // cache.save('id'+amount, { user: amount }).then(function() {
-        // })
-        // .catch(done);
-
+        cache.get('id9').then(function() {
+            size = cache.size();
+            expect(size).to.equal(amount);
+        }).catch(done);
         
         cache.forget(5);
-        setTimeout(function() {
-            console.log('cache.size()', cache.size());
-            cache.loop(function(id, filename, index) {
-                console.log(id, filename, index);
-                // expect(id).to.oneOf(ids);
-                // expect(cache.id(id)).to.equal(filename);
-                // expect(index).to.equal(count++);
-                // if (index === ids.length - 1) done();
-            });
-            setTimeout(function() {
-                done();
-            }, 500);
-        }, 500);
 
+        var intervalId = setInterval(function() {
+            if (cache.size() === (size - 5)) {
+                clearInterval(intervalId);
+                done();
+            }
+        });
     });
 
 });

@@ -23,7 +23,7 @@
     "webservice"
   ],
   "dependencies": {
-    "binh-promise-queue": "^1.0.7"
+    "binh-promise-queue": "^1.0.10"
   },
   "devDependencies": {
     "chai": "^4.3.7",
