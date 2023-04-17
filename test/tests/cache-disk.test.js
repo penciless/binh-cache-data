@@ -5,15 +5,15 @@ const fs = require('fs');
 const fsp = fs.promises;
 const path = require('path');
 
-var { CacheDisk } = require('../lib/cache-disk');
+var { CacheDisk } = require('../../lib/cache-disk');
 var { PromiseQueue } = require('binh-promise-queue');
 
-describe.only('CacheDisk - Initialization', function() {
+describe('CacheDisk - Initialization', function() {
 
     const ERROR_EXPECTING_REJECTED_PROMISE = new Error('Expect to get a rejected promise, but got a fulfilled one');
     const ERROR_EXPECTING_RESOLVED_PROMISE = new Error('Expect to get a fulfilled promise, but got a rejected one');
 
-    const DIRECTORY_PATH = path.join(__dirname, 'test-data');
+    const DIRECTORY_PATH = path.join(__dirname, 'test-disk');
 
     var cache = new CacheDisk(DIRECTORY_PATH), queue = new PromiseQueue();
 
