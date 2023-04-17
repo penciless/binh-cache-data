@@ -139,7 +139,6 @@ describe.only('CacheDisk - Initialization', function() {
         var ids = ['id1', 'id2', 'id3'];
 
         cache.loop(function(id, filename, index) {
-            // console.log(id, filename, index);
             expect(id).to.oneOf(ids);
             expect(cache.id(id)).to.equal(filename);
             expect(index).to.equal(count++);
