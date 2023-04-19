@@ -28,9 +28,17 @@ describe('CacheData - Initialization', function() {
     var servicei = queue.interface(service);
     var cachei = queue.interface(cache);
 
+    // this.timeout(9999999);
+    // queue.timeout(9999999);
+
     before(function(done) {
+        var sampleExceptionEdge = {
+            get: function() { var any; any.get(); },
+            save: function() { var any; any.save(); },
+            delete: function() { var any; any.delete(); }
+        };
         cache.setSource(service);
-        cache.setEdges(memory, disk);
+        cache.setEdges(null, undefined, memory, null, sampleExceptionEdge, undefined, disk, null, sampleExceptionEdge, undefined);
         disk.ready(done);
     });
 
@@ -146,7 +154,7 @@ describe('CacheData - Initialization', function() {
     it('cache.get(id) - should not cache undefined data from source (rejected promise)', function(done) {
         service.setModeReject(true);
 
-        servicei.get('id1').then(function() {
+        servicei.get('id-any').then(function() {
             done(ERROR_EXPECTING_REJECTED_PROMISE);
         })
         .catch(function(error) {
@@ -228,6 +236,166 @@ describe('CacheData - Initialization', function() {
 
         cache.get('noExistId').then(function(data) {
             expect(data).to.be.undefined;
+            done();
+        })
+        .catch(done);
+    });
+
+    it('cache.save(id, data) - should not save data as undefined', function(done) {
+        cache.save('notGonnaSavedID', undefined).then(function() {
+            done(ERROR_EXPECTING_REJECTED_PROMISE);
+        })
+        .catch(function(error) {
+            expect(error).to.be.instanceof(Error);
+            done();
+        });
+    });
+
+    it('cache.save(id, data) - should reject/resolve saving data when both source and edges have inconsistent/consistent data', function(done) {
+        // Edge data is undefined
+        expect(memory.get('id2')).to.be.undefined;
+
+        // Source data is object
+        servicei.get('id2').then(function(data) {
+            expect(data).to.eql({ num: 222 });
+        })
+        .catch(done);
+
+        // Save new data with verification (edge and source have different data => rejected > update edges with source data)
+        cachei.save('id2', { num: '222' }).then(function() {
+            done(ERROR_EXPECTING_REJECTED_PROMISE);
+        })
+        .catch(function(error) {
+            expect(error).to.be.instanceof(Error);
+
+            // Check data at Edge (should be updated same data as Source)
+            expect(memory.get('id2')).to.eql({ num: 222 });
+            expect(memory.get('id2')).to.not.eql({ num: '222' });
+        })
+        .catch(done);
+
+        // Check data at Source (should be remaining the same data as before)
+        servicei.get('id2').then(function(data) {
+            expect(data).to.eql({ num: 222 });
+        })
+        .catch(done);
+
+        // Save new data AGAIN with verification (edge and source have same data => resovle > update source and edges with new data)
+        cachei.save('id2', { num: '222' }).then(function(data) {
+            expect(data).to.be.undefined;
+    
+            // Check data at Edge
+            expect(memory.get('id2')).to.eql({ num: '222' });
+            expect(memory.get('id2')).to.not.eql({ num: 222 });
+        })
+        .catch(done);
+
+        // Check data at Edge (Disk)
+        diski.get('id2').then(function(data) {
+            expect(data).to.eql({ num: '222' });
+        })
+        .catch(done);
+
+        // Check data at Source
+        servicei.get('id2').then(function(data) {
+            expect(data).to.eql({ num: '222' });
+        })
+        .catch(done);
+
+        // Save AGAIN with the same data - should resolve with an error since data is same, and no need for update
+        cachei.save('id2', { num: '222' }).then(function(data) {
+            expect(data).to.be.instanceof(Error);
+    
+            // Check data at Edge
+            expect(memory.get('id2')).to.eql({ num: '222' });
+        })
+        .catch(done);
+
+        // Check data at Source
+        servicei.get('id2').then(function(data) {
+            expect(data).to.eql({ num: '222' });
+            done();
+        })
+        .catch(done);
+    });
+
+    it('cache.save(id, data, { force: true }) - should save data to source and edges without consistency verification', function(done) {
+        // Edge data is undefined
+        expect(memory.get('id3')).to.be.undefined;
+
+        // Source data is object
+        servicei.get('id3').then(function(data) {
+            expect(data).to.eql({ num: 333 });
+        })
+        .catch(done);
+
+        // Save new data without verification
+        cachei.save('id3', { num: 'new333' }, { force: true }).then(function(data) {
+            expect(data).to.be.undefined;
+
+            // Check data at Edge (Memory)
+            expect(memory.get('id3')).to.eql({ num: 'new333' });
+        })
+        .catch(done);
+
+        // Check data at Edge (Disk)
+        diski.get('id3').then(function(data) {
+            expect(data).to.eql({ num: 'new333' });
+            // done();
+        })
+        .catch(done);
+
+        // Check data at Source
+        servicei.get('id3').then(function(data) {
+            expect(data).to.eql({ num: 'new333' });
+            done();
+        })
+        .catch(done);
+    });
+
+    it('cache.save(id, data) - should save data edges without any declared source', function(done) {
+        var cache = new CacheData();
+
+        cache.setEdges(memory, disk);
+
+        var cachei = queue.interface(cache);
+
+        // Edge data is undefined
+        expect(memory.get('anyId1')).to.be.undefined;
+
+        // Edge data is undefined
+        diski.get('anyId1').then(function(data) {
+            expect(data).to.be.undefined;
+        })
+        .catch(done);
+
+        // Save new data without verification
+        cachei.save('anyId1', { num: 'any11' }, { force: true }).then(function(data) {
+            expect(data).to.be.undefined;
+
+            // Check data at Edge (memory)
+            expect(memory.get('anyId1')).to.eql({ num: 'any11' });
+        })
+        .catch(done);
+
+        // Check data at Edge (disk)
+        diski.get('anyId1').then(function(data) {
+            expect(data).to.eql({ num: 'any11' });
+        })
+        .catch(done);
+
+        // Save new data with verification
+        cachei.save('anyId1', { num: 'any12' }).then(function(data) {
+            expect(data).to.be.undefined;
+
+            // Check data at Edge (memory)
+            expect(memory.get('anyId1')).to.eql({ num: 'any12' });
+        })
+        .catch(done);
+
+        // Check data at Edge (disk)
+        diski.get('anyId1').then(function(data) {
+            expect(data).to.eql({ num: 'any12' });
             done();
         })
         .catch(done);
