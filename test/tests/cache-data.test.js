@@ -31,11 +31,9 @@ describe('CacheData - Initialization', function() {
     // this.timeout(9999999);
     // queue.timeout(9999999);
 
-    var consoleLogOrigin = console.log;
-
     before(function(done) {
-        console.log = function(){};
-
+        cache.loggable();
+        cache.loggable(false);
         var sampleExceptionEdge = {
             get: function() { var any; any.get(); },
             save: function() { var any; any.save(); },
@@ -47,7 +45,6 @@ describe('CacheData - Initialization', function() {
     });
 
     after(function(done) {
-        console.log = consoleLogOrigin;
         fsp.rm(DIRECTORY_PATH, { force: true, recursive: true }).then(function() { done(); }).catch(done);
     });
 
