@@ -28,8 +28,8 @@ describe('CacheData - Initialization', function() {
     var servicei = queue.interface(service);
     var cachei = queue.interface(cache);
 
-    // this.timeout(9999999);
-    // queue.timeout(9999999);
+    this.timeout(9999999);
+    queue.timeout(9999999);
 
     before(function(done) {
         cache.loggable();
@@ -401,6 +401,138 @@ describe('CacheData - Initialization', function() {
             done();
         })
         .catch(done);
+    });
+
+    it('cache.delete(id) - should remove data associated with ID from edges', function(done) {
+        var id = 'id1', current_data = { num: 111 };
+
+        cachei.get(id).then(function(data) {
+            expect(data).to.eql(current_data);
+            expect(memory.get(id)).to.eql(current_data);
+        });
+
+        diski.get(id).then(function(data) {
+            expect(data).to.eql(current_data);
+            cache.delete(id);
+        })
+        .catch(done);
+
+        var verifying = false, start = Date.now();
+        var intervalID = setInterval(function() {
+            if (verifying) return;
+            verifying = true;
+
+            if (Date.now() - start > 1800) {
+                clearInterval(intervalID);
+                done(new Error('Timeout for interval verification'));
+            }
+            else Promise.all([disk.get(id), service.get(id)]).then(function(values) {
+                verifying = false;
+
+                var disk_data = values[0], source_data = values[1];
+
+                if (disk_data === undefined && source_data instanceof Object && source_data.num === 111) {
+                    clearInterval(intervalID);
+                    expect(disk_data).to.be.undefined;
+                    expect(source_data).to.eql({ num: 111 });
+                    done();
+                }
+            })
+            .catch(done);
+        });
+    });
+
+    it('cache.delete(id, include_source) - should remove data from both source and edges', function(done) {
+        var id = 'id4', current_data = { num: 444 };
+
+        cachei.get(id).then(function(data) {
+            expect(data).to.eql(current_data);
+            expect(memory.get(id)).to.eql(current_data);
+        });
+
+        diski.get(id).then(function(data) {
+            expect(data).to.eql(current_data);
+            cache.delete(id, true); // true: include source
+        })
+        .catch(done);
+
+        var verifying = false, start = Date.now();
+        var intervalID = setInterval(function() {
+            if (verifying) return;
+            verifying = true;
+
+            if (Date.now() - start > 1800) {
+                clearInterval(intervalID);
+                done(new Error('Timeout for interval verification'));
+            }
+            else Promise.all([disk.get(id), service.get(id)]).then(function(values) {
+                verifying = false;
+
+                var disk_data = values[0], source_data = values[1];
+
+                if (disk_data === undefined && source_data === undefined) {
+                    clearInterval(intervalID);
+                    expect(disk_data).to.be.undefined;
+                    expect(source_data).to.be.undefined;
+                    done();
+                }
+            })
+            .catch(done);
+        });
+    });
+
+    it('cache.forget(amount) - should remove old data from edges only (not included source)', function(done) {
+        cachei.get('id5').catch(done);
+        cachei.get('id6').catch(done);
+        cachei.get('id7').catch(done);
+        cachei.get('id8').catch(done);
+
+        cachei.get('id9').then(function(data) {
+            expect(data).to.eql({ num: 999 });
+            expect(memory.size() > 0).to.be.true;
+        })
+        .catch(done);
+
+        diski.get('id9').then(function(data) {
+            expect(disk.size() > 0).to.be.true;
+            expect(disk.size()).to.equal(memory.size());
+            var size = memory.size();
+            expect(size - 2 > 0).to.be.true;
+            cache.forget(size - 2);
+        })
+        .catch(done);
+
+        var verifying = false, start = Date.now();
+        var intervalID = setInterval(function() {
+            if (verifying) return;
+            verifying = true;
+
+            if (Date.now() - start > 1800) {
+                clearInterval(intervalID);
+                done(new Error('Timeout for interval verification'));
+            }
+            else Promise.all([disk.get('id5'), service.get('id5')]).then(function(values) {
+                verifying = false;
+
+                var disk_data = values[0], source_data = values[1];
+
+                if (memory.size() === 2 && disk.size() === 2 && disk_data === undefined && source_data instanceof Object && source_data.num === 555) {
+                    clearInterval(intervalID);
+                    expect(memory.get('id5')).to.be.undefined;
+                    expect(disk_data).to.be.undefined;
+                    expect(source_data).to.eql({ num: 555 });
+                    done();
+                }
+            })
+            .catch(done);
+        });
+    });
+
+    it('cache.forget(callback) - should access to cache edges to customize how data is forgotten', function() {
+        cache.forget(function(edges) {
+            expect(edges[0]).to.equal(memory);
+            expect(edges[2]).to.equal(disk);
+        });
     });
 
 });
