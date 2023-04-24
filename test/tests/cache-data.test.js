@@ -28,9 +28,6 @@ describe('CacheData - Initialization', function() {
     var servicei = queue.interface(service);
     var cachei = queue.interface(cache);
 
-    this.timeout(9999999);
-    queue.timeout(9999999);
-
     before(function(done) {
         cache.loggable();
         cache.loggable(false);
@@ -283,8 +280,10 @@ describe('CacheData - Initialization', function() {
         .catch(done);
 
         // Save new data AGAIN with verification (edge and source have same data => resovle > update source and edges with new data)
-        cachei.save('id2', { num: '222' }).then(function(data) {
-            expect(data).to.be.undefined;
+        cachei.save('id2', { num: '222' }).then(function(results) {
+            expect(results).to.be.instanceof(Array);
+            expect(results[0]).to.be.instanceof(Promise);
+            expect(results[results.length - 1]).to.be.instanceof(Promise);
     
             // Check data at Edge
             expect(memory.get('id2')).to.eql({ num: '222' });
@@ -333,7 +332,7 @@ describe('CacheData - Initialization', function() {
 
         // Save new data without verification
         cachei.save('id3', { num: 'new333' }, { force: true }).then(function(data) {
-            expect(data).to.be.undefined;
+            expect(data).to.be.instanceof(Array);
 
             // Check data at Edge (Memory)
             expect(memory.get('id3')).to.eql({ num: 'new333' });
@@ -343,7 +342,6 @@ describe('CacheData - Initialization', function() {
         // Check data at Edge (Disk)
         diski.get('id3').then(function(data) {
             expect(data).to.eql({ num: 'new333' });
-            // done();
         })
         .catch(done);
 
@@ -373,7 +371,7 @@ describe('CacheData - Initialization', function() {
 
         // Save new data without verification
         cachei.save('anyId1', { num: 'any11' }, { force: true }).then(function(data) {
-            expect(data).to.be.undefined;
+            expect(data).to.be.instanceof(Array);
 
             // Check data at Edge (memory)
             expect(memory.get('anyId1')).to.eql({ num: 'any11' });
@@ -388,7 +386,7 @@ describe('CacheData - Initialization', function() {
 
         // Save new data with verification
         cachei.save('anyId1', { num: 'any12' }).then(function(data) {
-            expect(data).to.be.undefined;
+            expect(data).to.be.instanceof(Array);
 
             // Check data at Edge (memory)
             expect(memory.get('anyId1')).to.eql({ num: 'any12' });
