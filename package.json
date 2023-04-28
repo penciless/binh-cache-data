@@ -1,7 +1,7 @@
 {
   "name": "binh-cache-data",
   "description": "Caching data in many levels",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "author": "Nguyen Duc Binh <binh.ng1195@gmail.com>",
   "license": "MIT",
   "repository": {

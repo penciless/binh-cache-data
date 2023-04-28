@@ -411,33 +411,26 @@ describe('CacheData - Initialization', function() {
 
         diski.get(id).then(function(data) {
             expect(data).to.eql(current_data);
-            cache.delete(id);
         })
         .catch(done);
 
-        var verifying = false, start = Date.now();
-        var intervalID = setInterval(function() {
-            if (verifying) return;
-            verifying = true;
-
-            if (Date.now() - start > 1800) {
-                clearInterval(intervalID);
-                done(new Error('Timeout for interval verification'));
-            }
-            else Promise.all([disk.get(id), service.get(id)]).then(function(values) {
-                verifying = false;
-
-                var disk_data = values[0], source_data = values[1];
-
-                if (disk_data === undefined && source_data instanceof Object && source_data.num === 111) {
-                    clearInterval(intervalID);
+        cachei.delete(id).then(function(results) {
+            expect(results).to.be.instanceof(Array);
+            // Only check two proper edges (indeed storing data), the other two are invalid edges (throwing exception) for testing purposes
+            Promise.all([results[0], results[2]]).then(function() {
+                // After deleted, check data at edges
+                Promise.all([disk.get(id), service.get(id)]).then(function(values) {
+                    var disk_data = values[0], source_data = values[1];
+    
                     expect(disk_data).to.be.undefined;
                     expect(source_data).to.eql({ num: 111 });
                     done();
-                }
+                })
+                .catch(done);
             })
             .catch(done);
-        });
+        })
+        .catch(done);
     });
 
     it('cache.delete(id, include_source) - should remove data from both source and edges', function(done) {
@@ -450,33 +443,27 @@ describe('CacheData - Initialization', function() {
 
         diski.get(id).then(function(data) {
             expect(data).to.eql(current_data);
-            cache.delete(id, true); // true: include source
         })
         .catch(done);
 
-        var verifying = false, start = Date.now();
-        var intervalID = setInterval(function() {
-            if (verifying) return;
-            verifying = true;
-
-            if (Date.now() - start > 1800) {
-                clearInterval(intervalID);
-                done(new Error('Timeout for interval verification'));
-            }
-            else Promise.all([disk.get(id), service.get(id)]).then(function(values) {
-                verifying = false;
-
-                var disk_data = values[0], source_data = values[1];
-
-                if (disk_data === undefined && source_data === undefined) {
-                    clearInterval(intervalID);
+        // true: included source
+        cachei.delete(id, true).then(function(results) {
+            expect(results).to.be.instanceof(Array);
+            // Only check two proper edges (indeed storing data), the other two are invalid edges (throwing exception) for testing purposes
+            Promise.all([results[0], results[2]]).then(function() {
+                // After deleted, check data at edges
+                Promise.all([disk.get(id), service.get(id)]).then(function(values) {
+                    var disk_data = values[0], source_data = values[1];
+    
                     expect(disk_data).to.be.undefined;
                     expect(source_data).to.be.undefined;
                     done();
-                }
+                })
+                .catch(done);
             })
             .catch(done);
-        });
+        })
+        .catch(done);
     });
 
     it('cache.forget(amount) - should remove old data from edges only (not included source)', function(done) {
